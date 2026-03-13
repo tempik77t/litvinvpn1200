@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitVPN — Самый литый VPN</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --peach: #FDDBC7;
+  --peach2: #F7C4A8;
+  --peach3: #F0A97E;
+  --peach4: #E88A55;
+  --accent: #D96C3A;
+  --accent2: #C45A2A;
+  --bg: #FFF5EE;
+  --bg2: #FDE8D8;
+  --card: #FFFFFF;
+  --card2: #FEF0E6;
+  --text: #2A1A0E;
+  --text2: #5C3D2A;
+  --text3: #8B6147;
+  --border: #F0C4A0;
+  --shadow: rgba(217,108,58,0.15);
+  --green: #4CAF50;
+  --red: #E53935;
+  --gold: #FFB300;
+  --tab-h: 70px;
+}
+.dark {
+  --peach: #3D1E0A;
+  --peach2: #4A2510;
+  --peach3: #5C3018;
+  --peach4: #7A4020;
+  --accent: #F0904A;
+  --accent2: #F5A060;
+  --bg: #1A0D06;
+  --bg2: #251208;
+  --card: #2E1608;
+  --card2: #3A1C0D;
+  --text: #FFE8D6;
+  --text2: #F5C9A8;
+  --text3: #D4956A;
+  --border: #5C3018;
+  --shadow: rgba(0,0,0,0.4);
+  --gold: #FFD740;
+}
+* { margin:0; padding:0; box-sizing:border-box; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+h1,h2,h3 { font-family: 'Unbounded', sans-serif; }
+
+/* AUTH */
+#auth-screen { position:fixed; inset:0; background:var(--bg); z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+.auth-logo { font-family:'Unbounded',sans-serif; font-size:2.2rem; font-weight:900; color:var(--accent); margin-bottom:6px; letter-spacing:-1px; }
+.auth-sub { color:var(--text3); font-size:0.85rem; margin-bottom:30px; font-weight:600; }
+.auth-card { background:var(--card); border:2px solid var(--border); border-radius:24px; padding:28px 24px; width:100%; max-width:380px; box-shadow: 0 8px 32px var(--shadow); }
+.auth-tabs { display:flex; gap:8px; margin-bottom:24px; }
+.auth-tab { flex:1; padding:10px; border-radius:12px; border:2px solid var(--border); background:transparent; color:var(--text2); font-family:'Nunito',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; }
+.auth-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.auth-form { display:flex; flex-direction:column; gap:14px; }
+.auth-form input { padding:13px 16px; border-radius:14px; border:2px solid var(--border); background:var(--bg2); color:var(--text); font-family:'Nunito',sans-serif; font-size:0.95rem; outline:none; }
+.auth-form input:focus { border-color:var(--accent); }
+.policy-row { display:flex; align-items:flex-start; gap:10px; font-size:0.82rem; color:var(--text2); }
+.policy-row input[type=checkbox] { margin-top:3px; accent-color:var(--accent); width:16px; height:16px; flex-shrink:0; }
+.policy-link { color:var(--accent); text-decoration:underline; cursor:pointer; }
+.btn-main { padding:14px; border-radius:14px; border:none; background:var(--accent); color:#fff; font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:0.5px; }
+.btn-main:hover { background:var(--accent2); transform:scale(1.01); }
+.auth-err { color:var(--red); font-size:0.82rem; text-align:center; min-height:18px; font-weight:700; }
+
+/* POLICY MODAL */
+.modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal { background:var(--card); border-radius:24px; padding:28px 22px; max-width:420px; width:100%; max-height:80vh; overflow-y:auto; box-shadow:0 16px 48px rgba(0,0,0,0.3); }
+.modal h3 { font-size:1.1rem; margin-bottom:16px; color:var(--accent); }
+.modal p { font-size:0.82rem; color:var(--text2); line-height:1.7; margin-bottom:10px; }
+.modal-close { margin-top:20px; width:100%; }
+
+/* APP */
+#app { display:none; flex-direction:column; min-height:100vh; padding-bottom:var(--tab-h); }
+#app.visible { display:flex; }
+
+/* HEADER */
+.app-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 10px; }
+.app-logo { font-family:'Unbounded',sans-serif; font-size:1.3rem; font-weight:900; color:var(--accent); }
+.header-right { display:flex; align-items:center; gap:10px; }
+.theme-btn { width:38px; height:38px; border-radius:50%; border:2px solid var(--border); background:var(--card2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.user-badge { background:var(--peach3); color:var(--text); border-radius:12px; padding:6px 12px; font-size:0.75rem; font-weight:800; font-family:'Unbounded',sans-serif; }
+
+/* TABS */
+.tab-bar { position:fixed; bottom:0; left:0; right:0; height:var(--tab-h); background:var(--card); border-top:2px solid var(--border); display:flex; z-index:100; box-shadow:0 -4px 20px var(--shadow); }
+.tab-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; color:var(--text3); font-size:0.6rem; font-weight:700; border:none; background:transparent; font-family:'Nunito',sans-serif; padding:0 2px; }
+.tab-item.active { color:var(--accent); }
+.tab-item .tab-icon { font-size:1.3rem; }
+
+/* PAGES */
+.page { display:none; flex:1; overflow-y:auto; padding:0 16px 20px; animation: fadeIn 0.25s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* HOME */
+.vpn-card { background: linear-gradient(135deg, var(--peach3), var(--accent)); border-radius:28px; padding:32px 24px; text-align:center; margin:16px 0; position:relative; overflow:hidden; }
+.vpn-card::before { content:''; position:absolute; top:-40px; right:-40px; width:150px; height:150px; background:rgba(255,255,255,0.1); border-radius:50%; }
+.vpn-status { font-size:0.8rem; font-weight:800; color:rgba(255,255,255,0.8); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+.vpn-btn { width:100px; height:100px; border-radius:50%; border:4px solid rgba(255,255,255,0.4); background:rgba(255,255,255,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin:0 auto 16px; backdrop-filter:blur(4px); transition:all 0.3s; }
+.vpn-btn:hover { transform:scale(1.05); background:rgba(255,255,255,0.25); }
+.vpn-btn.on { background:rgba(255,255,255,0.3); box-shadow:0 0 40px rgba(255,255,255,0.5); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 30px rgba(255,255,255,0.4)} 50%{box-shadow:0 0 60px rgba(255,255,255,0.7)} }
+.vpn-label { font-family:'Unbounded',sans-serif; color:#fff; font-size:1.1rem; font-weight:900; }
+.vpn-server { color:rgba(255,255,255,0.75); font-size:0.82rem; margin-top:6px; font-weight:600; }
+
+.traffic-live { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 0 16px; }
+.traffic-box { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:16px; text-align:center; }
+.traffic-val { font-family:'Unbounded',sans-serif; font-size:1.4rem; font-weight:900; color:var(--accent); }
+.traffic-lbl { font-size:0.72rem; color:var(--text3); font-weight:700; margin-top:4px; }
+
+.server-select { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:16px; margin-bottom:16px; }
+.server-select h4 { font-size:0.85rem; color:var(--text2); font-weight:800; margin-bottom:12px; }
+.server-list { display:flex; flex-direction:column; gap:8px; }
+.server-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:12px; background:var(--bg2); cursor:pointer; border:2px solid transparent; }
+.server-item.selected { border-color:var(--accent); background:var(--peach2); }
+.server-left { display:flex; align-items:center; gap:10px; font-size:0.9rem; font-weight:700; color:var(--text); }
+.server-ping { font-size:0.75rem; color:var(--green); font-weight:800; }
+
+/* PLANS */
+.plans-grid { display:flex; flex-direction:column; gap:14px; padding:16px 0; }
+.plan-card { background:var(--card); border:2px solid var(--border); border-radius:22px; padding:20px; position:relative; overflow:hidden; }
+.plan-card.popular { border-color:var(--accent); }
+.plan-badge { position:absolute; top:14px; right:14px; background:var(--accent); color:#fff; font-size:0.65rem; font-weight:800; padding:4px 10px; border-radius:20px; font-family:'Unbounded',sans-serif; }
+.plan-name { font-family:'Unbounded',sans-serif; font-size:1rem; font-weight:900; color:var(--accent); margin-bottom:4px; }
+.plan-price { font-size:1.6rem; font-weight:900; color:var(--text); font-family:'Unbounded',sans-serif; }
+.plan-price span { font-size:0.75rem; color:var(--text3); font-weight:600; }
+.plan-features { margin:12px 0; display:flex; flex-direction:column; gap:5px; }
+.plan-feat { font-size:0.78rem; color:var(--text2); font-weight:600; display:flex; align-items:center; gap:6px; }
+.plan-feat::before { content:'✓'; color:var(--green); font-weight:900; }
+.plan-btn { width:100%; padding:11px; border-radius:12px; border:none; background:var(--accent); color:#fff; font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.8rem; cursor:pointer; margin-top:8px; }
+.plan-btn.free { background:var(--bg2); color:var(--text2); }
+.promo-row { margin-top:10px; display:flex; gap:8px; }
+.promo-input { flex:1; padding:9px 12px; border-radius:10px; border:2px solid var(--border); background:var(--bg2); color:var(--text); font-family:'Nunito',sans-serif; font-size:0.82rem; outline:none; }
+.promo-btn { padding:9px 14px; border-radius:10px; border:none; background:var(--peach3); color:var(--text); font-weight:800; font-size:0.82rem; cursor:pointer; font-family:'Nunito',sans-serif; }
+
+/* FEATURES */
+.features-list { display:flex; flex-direction:column; gap:12px; padding:16px 0; }
+.feat-card { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:16px; display:flex; align-items:flex-start; gap:14px; }
+.feat-icon { font-size:1.8rem; flex-shrink:0; }
+.feat-info { flex:1; }
+.feat-title { font-weight:800; font-size:0.9rem; color:var(--text); margin-bottom:3px; }
+.feat-desc { font-size:0.75rem; color:var(--text2); line-height:1.5; }
+.feat-lock { font-size:0.68rem; font-weight:800; padding:3px 8px; border-radius:8px; display:inline-block; margin-top:6px; }
+.feat-lock.free { background:#e8f5e9; color:#2e7d32; }
+.feat-lock.paid { background:#fff3e0; color:#e65100; }
+.feat-lock.vip { background:#f3e5f5; color:#6a1b9a; }
+.feat-lock.ultimate { background:linear-gradient(135deg,#ff6b6b,#feca57); color:#fff; }
+.dark .feat-lock.free { background:#1b5e20; color:#a5d6a7; }
+.dark .feat-lock.paid { background:#4e2000; color:#ffcc80; }
+.dark .feat-lock.vip { background:#2d0d3a; color:#ce93d8; }
+
+/* SETTINGS */
+.settings-list { display:flex; flex-direction:column; gap:10px; padding:16px 0; }
+.setting-row { background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px; display:flex; align-items:center; justify-content:space-between; }
+.setting-left { display:flex; align-items:center; gap:12px; }
+.setting-icon { font-size:1.3rem; }
+.setting-label { font-weight:700; font-size:0.88rem; color:var(--text); }
+.setting-sub { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+.toggle { width:46px; height:26px; background:var(--border); border-radius:13px; position:relative; cursor:pointer; flex-shrink:0; border:none; }
+.toggle.on { background:var(--accent); }
+.toggle::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+.toggle.on::after { transform:translateX(20px); }
+.logout-btn { width:100%; margin-top:8px; padding:14px; border-radius:16px; border:2px solid var(--red); background:transparent; color:var(--red); font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.85rem; cursor:pointer; }
+
+/* TRAFFIC PAGE */
+.traffic-header { padding:16px 0 8px; }
+.traffic-header h2 { font-size:1.2rem; color:var(--text); }
+.traffic-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.tstat { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:18px; text-align:center; }
+.tstat-val { font-family:'Unbounded',sans-serif; font-size:1.5rem; font-weight:900; color:var(--accent); }
+.tstat-lbl { font-size:0.7rem; color:var(--text3); font-weight:700; margin-top:4px; }
+.traffic-bar-wrap { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:18px; margin-bottom:14px; }
+.traffic-bar-wrap h4 { font-size:0.85rem; font-weight:800; color:var(--text2); margin-bottom:12px; }
+.tbar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.tbar-label { font-size:0.75rem; font-weight:700; color:var(--text2); width:80px; flex-shrink:0; }
+.tbar-bg { flex:1; height:12px; background:var(--bg2); border-radius:6px; overflow:hidden; }
+.tbar-fill { height:100%; border-radius:6px; background:linear-gradient(90deg, var(--peach3), var(--accent)); }
+.tbar-val { font-size:0.72rem; color:var(--text3); width:50px; text-align:right; font-weight:700; }
+
+/* GOSUSLUGI */
+.gos-header { text-align:center; padding:20px 0 10px; }
+.gos-logo { font-family:'Unbounded',sans-serif; font-size:1.4rem; font-weight:900; color:#0d47a1; margin-bottom:4px; }
+.dark .gos-logo { color:#64b5f6; }
+.gos-sub { font-size:0.78rem; color:var(--text3); margin-bottom:16px; }
+.gos-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.gos-card { background:var(--card); border:2px solid var(--border); border-radius:18px; padding:16px; text-align:center; cursor:pointer; }
+.gos-card:hover { border-color:var(--accent); transform:scale(1.01); }
+.gos-card .icon { font-size:2rem; margin-bottom:8px; }
+.gos-card .name { font-size:0.78rem; font-weight:800; color:var(--text); }
+.gos-card .desc { font-size:0.68rem; color:var(--text3); margin-top:3px; }
+
+/* GOS MODAL */
+.gos-form { display:flex; flex-direction:column; gap:12px; }
+.gos-form label { font-size:0.8rem; font-weight:700; color:var(--text2); margin-bottom:2px; display:block; }
+.gos-form input, .gos-form select, .gos-form textarea { padding:11px 14px; border-radius:12px; border:2px solid var(--border); background:var(--bg2); color:var(--text); font-family:'Nunito',sans-serif; font-size:0.88rem; outline:none; width:100%; }
+.gos-form input:focus, .gos-form select:focus { border-color:#0d47a1; }
+.dark .gos-form input:focus, .dark .gos-form select:focus { border-color:#64b5f6; }
+.gos-success { text-align:center; padding:20px 0; }
+.gos-success .check { font-size:3rem; }
+.gos-success h3 { font-size:1rem; color:var(--green); margin:10px 0 6px; font-family:'Unbounded',sans-serif; }
+.gos-success p { font-size:0.8rem; color:var(--text2); }
+.btn-blue { background:#1565c0; color:#fff; }
+.btn-blue:hover { background:#0d47a1; }
+
+/* TOAST */
+.toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:12px 24px; border-radius:14px; font-weight:700; font-size:0.88rem; z-index:9999; animation:toastIn 0.3s ease; display:none; }
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+.page-title { font-size:1.2rem; color:var(--text); padding:16px 0 4px; }
+.page-sub { font-size:0.78rem; color:var(--text3); margin-bottom:4px; }
+
+/* CURRENT PLAN CHIP */
+.cur-plan { background:var(--accent); color:#fff; border-radius:12px; padding:8px 16px; font-family:'Unbounded',sans-serif; font-size:0.75rem; font-weight:700; display:inline-block; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-logo">🔐 LitVPN</div>
+  <div class="auth-sub">Самый литый VPN в галактике</div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuth('login')">Вход</button>
+      <button class="auth-tab" onclick="switchAuth('reg')">Регистрация</button>
+    </div>
+    <div id="login-form" class="auth-form">
+      <input type="email" id="login-email" placeholder="Email" />
+      <input type="password" id="login-pass" placeholder="Пароль" />
+      <div class="auth-err" id="login-err"></div>
+      <button class="btn-main" onclick="doLogin()">Войти</button>
+    </div>
+    <div id="reg-form" class="auth-form" style="display:none">
+      <input type="text" id="reg-name" placeholder="Имя" />
+      <input type="email" id="reg-email" placeholder="Email" />
+      <input type="password" id="reg-pass" placeholder="Пароль" />
+      <div class="policy-row">
+        <input type="checkbox" id="policy-check" />
+        <label for="policy-check">Принимаю <span class="policy-link" onclick="showPolicy()">политику конфиденциальности</span> и условия использования LitVPN</label>
+      </div>
+      <div class="auth-err" id="reg-err"></div>
+      <button class="btn-main" onclick="doReg()">Зарегистрироваться</button>
+    </div>
+  </div>
+</div>
+
+<!-- POLICY MODAL -->
+<div id="policy-modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3>📜 Политика конфиденциальности LitVPN</h3>
+    <p>1. <strong>Кто мы:</strong> LitVPN — это очень серьёзная компания, которая занимается очень серьёзными делами. Мы не знаем что именно, но делаем это ответственно.</p>
+    <p>2. <strong>Что мы собираем:</strong> Мы собираем ваш IP-адрес, имя вашей кошки, любимый цвет носков и количество раз, когда вы зевнули за последнюю неделю. Всё это строго конфиденциально.</p>
+    <p>3. <strong>Как мы используем данные:</strong> Данные используются для улучшения нашего сервиса, для написания фанфиков о ваших привычках и для ежегодного конкурса "Самый интересный пользователь месяца".</p>
+    <p>4. <strong>Передача третьим лицам:</strong> Мы НЕ передаём ваши данные третьим лицам. Мы передаём их четвёртым и пятым лицам, потому что они попросили вежливее.</p>
+    <p>5. <strong>Куки:</strong> Мы используем куки. Шоколадные куки вкуснее, но цифровые куки — это то, о чём идёт речь. Они тоже вкусные, но есть их не рекомендуется.</p>
+    <p>6. <strong>Ваши права:</strong> Вы имеете право запросить удаление данных. Мы рассмотрим запрос в течение 3-7 рабочих столетий.</p>
+    <p>7. <strong>Безопасность:</strong> Ваши данные защищены алгоритмом шифрования "256-битный обнимашки". Это не настоящий алгоритм, но звучит убедительно.</p>
+    <p>8. <strong>Принятие условий:</strong> Нажимая кнопку, вы соглашаетесь со всем вышеперечисленным, а также с тем, что земля круглая и что ананас на пицце — это нормально.</p>
+    <button class="btn-main modal-close btn-blue" onclick="closePolicy()">Понял, согласен на всё!</button>
+  </div>
+</div>
+
+<!-- GOS MODAL -->
+<div id="gos-modal" class="modal-bg" style="display:none">
+  <div class="modal" id="gos-modal-content"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-logo">🔐 LitVPN</div>
+    <div class="header-right">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+      <div class="user-badge" id="user-badge">ЛОХ</div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="vpn-card">
+      <div class="vpn-status" id="vpn-status-text">ОТКЛЮЧЕНО</div>
+      <button class="vpn-btn" id="vpn-btn" onclick="toggleVPN()">⚡</button>
+      <div class="vpn-label" id="vpn-label">Нажми для подключения</div>
+      <div class="vpn-server" id="vpn-server-label">Сервер: Не выбран</div>
+    </div>
+
+    <div class="traffic-live">
+      <div class="traffic-box">
+        <div class="traffic-val" id="speed-down">0 TB/s</div>
+        <div class="traffic-lbl">⬇ Скачивание</div>
+      </div>
+      <div class="traffic-box">
+        <div class="traffic-val" id="speed-up">0 TB/s</div>
+        <div class="traffic-lbl">⬆ Загрузка</div>
+      </div>
+    </div>
+
+    <div class="server-select">
+      <h4>🌍 Выбор сервера</h4>
+      <div class="server-list" id="server-list">
+        <div class="server-item selected" onclick="selectServer(this,'🇷🇺 Россия (Скрытый бункер)')">
+          <div class="server-left">🇷🇺 Россия (Скрытый бункер)</div>
+          <div class="server-ping">3 мс</div>
+        </div>
+        <div class="server-item" onclick="selectServer(this,'🇺🇸 США (Нью-Йорк)')">
+          <div class="server-left">🇺🇸 США (Нью-Йорк)</div>
+          <div class="server-ping">87 мс</div>
+        </div>
+        <div class="server-item" onclick="selectServer(this,'🇩🇪 Германия (Берлин)')">
+          <div class="server-left">🇩🇪 Германия (Берлин)</div>
+          <div class="server-ping">42 мс</div>
+        </div>
+        <div class="server-item" onclick="selectServer(this,'🇯🇵 Япония (Токио)')">
+          <div class="server-left">🇯🇵 Япония (Токио)</div>
+          <div class="server-ping">156 мс</div>
+        </div>
+        <div class="server-item" onclick="selectServer(this,'🌑 Тёмная Луна (секретно)')">
+          <div class="server-left">🌑 Тёмная Луна (секретно)</div>
+          <div class="server-ping">0.01 мс</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANS -->
+  <div class="page" id="page-plans">
+    <h2 class="page-title">💳 Тарифы</h2>
+    <p class="page-sub">Выбери свой путь, бро</p>
+    <div class="cur-plan" id="cur-plan-label">Текущий: ЛОХ (бесплатно)</div>
+    <div class="plans-grid" id="plans-grid"></div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="page" id="page-features">
+    <h2 class="page-title">🚀 Функции</h2>
+    <p class="page-sub">Всё, что умеет LitVPN</p>
+    <div class="features-list" id="features-list"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <h2 class="page-title">⚙️ Настройки</h2>
+    <div class="settings-list">
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🌙</div>
+          <div><div class="setting-label">Тёмная тема</div><div class="setting-sub">Спаси глаза</div></div>
+        </div>
+        <button class="toggle" id="dark-toggle" onclick="toggleThemeBtn(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🔔</div>
+          <div><div class="setting-label">Уведомления</div><div class="setting-sub">Узнавай о хорошем</div></div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🚀</div>
+          <div><div class="setting-label">Автоподключение</div><div class="setting-sub">Включает сам, как умный</div></div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🐌</div>
+          <div><div class="setting-label">Режим улитки</div><div class="setting-sub">Медленно, но с достоинством</div></div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🧅</div>
+          <div><div class="setting-label">Луковая маршрутизация</div><div class="setting-sub">Ты плачешь — они не знают</div></div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">🎭</div>
+          <div><div class="setting-label">Режим невидимки</div><div class="setting-sub">Тебя нет. Вообще.</div></div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-icon">👤</div>
+          <div><div class="setting-label">Аккаунт</div><div class="setting-sub" id="settings-email">user@litvpn.ru</div></div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text3);font-weight:700" id="settings-plan">ЛОХ</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">🚪 Выйти из аккаунта</button>
+    </div>
+  </div>
+
+  <!-- TRAFFIC -->
+  <div class="page" id="page-traffic">
+    <div class="traffic-header"><h2 class="page-title">📊 Трафик</h2></div>
+    <div class="traffic-stat-grid">
+      <div class="tstat"><div class="tstat-val" id="t-total">847 PB</div><div class="tstat-lbl">Всего использовано</div></div>
+      <div class="tstat"><div class="tstat-val" id="t-month">312 TB</div><div class="tstat-lbl">За месяц</div></div>
+      <div class="tstat"><div class="tstat-val" id="t-today">69 TB</div><div class="tstat-lbl">Сегодня</div></div>
+      <div class="tstat"><div class="tstat-val" id="t-saved">∞</div><div class="tstat-lbl">Сэкономлено</div></div>
+    </div>
+    <div class="traffic-bar-wrap">
+      <h4>Использование по приложениям</h4>
+      <div class="tbar-row"><div class="tbar-label">YouTube</div><div class="tbar-bg"><div class="tbar-fill" style="width:88%"></div></div><div class="tbar-val">278 TB</div></div>
+      <div class="tbar-row"><div class="tbar-label">TikTok</div><div class="tbar-bg"><div class="tbar-fill" style="width:62%"></div></div><div class="tbar-val">195 TB</div></div>
+      <div class="tbar-row"><div class="tbar-label">Telegram</div><div class="tbar-bg"><div class="tbar-fill" style="width:45%"></div></div><div class="tbar-val">141 TB</div></div>
+      <div class="tbar-row"><div class="tbar-label">Instagram</div><div class="tbar-bg"><div class="tbar-fill" style="width:30%"></div></div><div class="tbar-val">94 TB</div></div>
+      <div class="tbar-row"><div class="tbar-label">Прочее</div><div class="tbar-bg"><div class="tbar-fill" style="width:15%"></div></div><div class="tbar-val">47 TB</div></div>
+    </div>
+    <div class="traffic-bar-wrap">
+      <h4>График за неделю (фейковый но красивый)</h4>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:80px;padding-top:10px">
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:60%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:80%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:45%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:100%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:75%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:90%"></div>
+        <div style="flex:1;background:linear-gradient(0deg,var(--peach3),var(--accent));border-radius:6px 6px 0 0;height:55%"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Пн</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Вт</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Ср</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Чт</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Пт</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Сб</div>
+        <div style="flex:1;text-align:center;font-size:0.65rem;color:var(--text3);font-weight:700">Вс</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOSUSLUGI -->
+  <div class="page" id="page-gos">
+    <div class="gos-header">
+      <div class="gos-logo">🏛️ ЛитУслуги</div>
+      <div class="gos-sub">Государственные услуги прямо в VPN</div>
+    </div>
+    <div class="gos-grid" id="gos-grid"></div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-item active" onclick="switchPage('home',this)"><div class="tab-icon">🏠</div>Главное</button>
+    <button class="tab-item" onclick="switchPage('plans',this)"><div class="tab-icon">💳</div>Тарифы</button>
+    <button class="tab-item" onclick="switchPage('features',this)"><div class="tab-icon">🚀</div>Функции</button>
+    <button class="tab-item" onclick="switchPage('settings',this)"><div class="tab-icon">⚙️</div>Настройки</button>
+    <button class="tab-item" onclick="switchPage('traffic',this)"><div class="tab-icon">📊</div>Трафик</button>
+    <button class="tab-item" onclick="switchPage('gos',this)"><div class="tab-icon">🏛️</div>Госуслуги</button>
+  </div>
+</div>
+
+<script>
+// DATA
+const PLANS = [
+  { id:'loh', name:'ЛОХ', emoji:'🥬', price:'Бесплатно', priceNum:0, color:'#4CAF50',
+    features:['1 устройство','Скорость: 56 кбит/с (ретро)','Сервер: только Россия','Трафик: 100 МБ/месяц','Реклама каждые 3 сек','Без поддержки (сам разберёшься)'], free:true },
+  { id:'ueban', name:'УЕБАН', emoji:'😤', price:'49 ₽/мес', priceNum:49,
+    features:['2 устройства','Скорость: 1 Мбит/с','3 страны','Трафик: 10 ГБ/месяц','Реклама каждые 10 сек','Поддержка: бот-идиот 24/7'] },
+  { id:'nefr', name:'НЕФР', emoji:'🏺', price:'149 ₽/мес', priceNum:149,
+    features:['3 устройства','Скорость: 10 Мбит/с','15 стран','Трафик: 100 ГБ/месяц','Только 2 рекламы в день','Kill Switch (ненастоящий)'] },
+  { id:'snail', name:'УЛИТКА ЕБАННАЯ', emoji:'🐌', price:'299 ₽/мес', priceNum:299,
+    features:['4 устройства','Скорость: 100 Мбит/с','30 стран','Трафик: 1 ТБ/месяц','Без рекламы','Режим улитки (очень медленно, но стильно)'] },
+  { id:'normis', name:'НОРМИС', emoji:'😐', price:'499 ₽/мес', priceNum:499, popular:true,
+    features:['5 устройств','Скорость: 1 Гбит/с','50 стран','Трафик: безлимит','Без рекламы','Раздвоение личности VPN (2 IP одновременно)'] },
+  { id:'vitalik', name:'ВИТАЛИК', emoji:'🧔', price:'999 ₽/мес', priceNum:999,
+    features:['7 устройств','Скорость: 10 Гбит/с','80 стран','Трафик: ∞ ТБ','Режим Виталика (анонимность 80%)','Защита от жены','Блокировка рекламы на всех сайтах'] },
+  { id:'vitalik2', name:'ВИТАЛИК ПРОДВИНУТЫЙ', emoji:'🧔‍♂️💼', price:'1999 ₽/мес', priceNum:1999,
+    features:['10 устройств','Скорость: 100 Гбит/с','120 стран','Трафик: ∞∞ ТБ','Анонимность 99%','Детектор слежки в реальном времени','ИИ-выбор сервера','Смена голоса в звонках'] },
+  { id:'litpro', name:'ЛИТВИН ПРО', emoji:'⚡', price:'4999 ₽/мес', priceNum:4999,
+    features:['20 устройств','Скорость: 1 ТБит/с','180 стран + тёмная луна','Квантовое шифрование','Режим призрака','Анонимность 100.1%','VPN для VPN (двойной VPN VPN)','Личный менеджер Витёк'] },
+  { id:'egor', name:'ЛИТВИНОВ ЕГОР (VIP)', emoji:'👑', price:'9999 ₽/мес', priceNum:9999,
+    features:['50 устройств','Скорость: 1 ПБит/с','Все страны + Антарктида','Шифрование на уровне ЦРУ','Сервер на орбите','Режим бога','Личный охранник данных (живой человек)','Подписка на Netflix в подарок (нет)'] },
+  { id:'egorcyki', name:'ЕГОРЧИКИ ЛИТВИНЧИКИ (ULTIMATE)', emoji:'🌌', price:'99999 ₽/мес', priceNum:99999,
+    features:['∞ устройств','Скорость: ∞ ТБит/с (быстрее света)','Все страны + параллельные вселенные','Шифрование временем','Квантовый туннель','Анонимность 420%','Сервер на Марсе и Юпитере','Личный Егор Литвинов в штате','Смена ДНК при подключении','Управление погодой'] },
+];
+
+const FEATURES = [
+  { icon:'🔒', title:'Базовое шифрование', desc:'AES-256. Ваши данные в безопасности. Ну, почти.', lock:'free', lockText:'Бесплатно' },
+  { icon:'⚡', title:'Быстрый режим', desc:'Ускоряет интернет минимум в 3 раза. Или замедляет. Зависит от Меркурия.', lock:'paid', lockText:'От НЕФР' },
+  { icon:'🐌', title:'Режим улитки', desc:'Намеренно медленное соединение для экономии нервов соседей.', lock:'paid', lockText:'От УЛИТКА ЕБАННАЯ' },
+  { icon:'🧅', title:'Луковая маршрутизация', desc:'7 слоёв шифрования. Как торт. Только данные, не торт.', lock:'paid', lockText:'От НОРМИС' },
+  { icon:'🎭', title:'Режим двойного агента', desc:'Притворяемся, что ты это не ты. Актёрское мастерство 10/10.', lock:'paid', lockText:'От ВИТАЛИК' },
+  { icon:'🌙', title:'Ночной режим VPN', desc:'Особо невидимый в ночное время. Работает только от 22:00 до 05:00.', lock:'paid', lockText:'От ВИТАЛИК' },
+  { icon:'👻', title:'Режим призрака', desc:'Ты буквально исчезаешь из интернета. Даже Google не знает о тебе.', lock:'vip', lockText:'От ЛИТВИН ПРО' },
+  { icon:'🛸', title:'Туннель через спутник', desc:'Трафик идёт через наш спутник на орбите (мы его придумали).', lock:'vip', lockText:'От ЛИТВИНОВ ЕГОР VIP' },
+  { icon:'🧠', title:'ИИ-защитник', desc:'Нейросеть смотрит на твой трафик и говорит "красавчик" каждый раз.', lock:'vip', lockText:'От ВИТАЛИК ПРОДВИНУТЫЙ' },
+  { icon:'🌌', title:'Квантовый туннель', desc:'Использует квантовую запутанность для телепортации пакетов. Учёные плачут.', lock:'ultimate', lockText:'Только ЕГОРЧИКИ ULTIMATE' },
+  { icon:'🧬', title:'Смена цифровой ДНК', desc:'При каждом подключении ты буквально другой человек в интернете.', lock:'ultimate', lockText:'Только ЕГОРЧИКИ ULTIMATE' },
+  { icon:'☁️', title:'Управление погодой', desc:'Влияет на облачность в регионе для улучшения сигнала. Наверное.', lock:'ultimate', lockText:'Только ЕГОРЧИКИ ULTIMATE' },
+  { icon:'🔊', title:'Смена голоса в звонках', desc:'Звучишь как Дарт Вейдер во всех звонках. Круто.', lock:'vip', lockText:'От ВИТАЛИК ПРОДВИНУТЫЙ' },
+  { icon:'📡', title:'Kill Switch', desc:'Отключает интернет если VPN падает. Зато честно.', lock:'paid', lockText:'От НЕФР' },
+  { icon:'🔮', title:'Предсказание хакеров', desc:'Заранее знает, что тебя хотят взломать. За 5 минут до взлома.', lock:'vip', lockText:'От ЛИТВИН ПРО' },
+];
+
+const GOS_SERVICES = [
+  { icon:'🏥', name:'Запись к врачу', desc:'Терапевт, хирург, экзорцист', form:'doctor' },
+  { icon:'💸', name:'Оплата штрафов', desc:'ГИБДД, парковки и прочее', form:'fine' },
+  { icon:'📋', name:'Справки и документы', desc:'Всё что нужно государству', form:'doc' },
+  { icon:'🚗', name:'Регистрация авто', desc:'Ставим на учёт вашу ласточку', form:'auto' },
+  { icon:'🏠', name:'Субсидия на ЖКХ', desc:'Может дадут, а может нет', form:'jkh' },
+  { icon:'👶', name:'Запись ребёнка в сад', desc:'Займите место пока не поздно', form:'sad' },
+  { icon:'🎓', name:'Документы об образовании', desc:'Диплом, аттестат и справки', form:'edu' },
+  { icon:'✈️', name:'Загранпаспорт', desc:'Куда-то же надо ехать', form:'passport' },
+  { icon:'🗳️', name:'Портал выборов', desc:'Ваш голос (возможно) считают', form:'vote' },
+  { icon:'🏢', name:'Регистрация ИП / ООО', desc:'Стань предпринимателем', form:'biz' },
+  { icon:'👴', name:'Пенсионный фонд', desc:'Узнай сколько тебе платят', form:'pension' },
+  { icon:'🐶', name:'Регистрация питомца', desc:'Официально признай кота', form:'pet' },
+];
+
+const PROMO_CODES = {
+  'UBAN50': { discount: 50, plan: 'ueban' },
+  'NEFR2024': { discount: 30, plan: 'nefr' },
+  'SNAIL69': { discount: 25, plan: 'snail' },
+  'NORMIS100': { discount: 100, plan: 'normis' },
+  'VITALIK777': { discount: 40, plan: 'vitalik' },
+  'LITPRO999': { discount: 35, plan: 'litpro' },
+  'EGOR_VIP': { discount: 20, plan: 'egor' },
+  'EGORCYKI': { discount: 15, plan: 'egorcyki' },
+  'ALLSALE': { discount: 30, plan: null },
+  'LITVPN666': { discount: 66, plan: null },
+};
+
+// STATE
+let users = JSON.parse(localStorage.getItem('litvpn_users') || '{}');
+let currentUser = JSON.parse(localStorage.getItem('litvpn_current') || 'null');
+let vpnOn = false;
+let selectedServer = '🇷🇺 Россия (Скрытый бункер)';
+let speedInterval = null;
+let darkMode = false;
+
+// AUTH LOGIC
+function switchAuth(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='reg')));
+  document.getElementById('login-form').style.display = tab==='login' ? 'flex' : 'none';
+  document.getElementById('reg-form').style.display = tab==='reg' ? 'flex' : 'none';
+}
+function showPolicy() { document.getElementById('policy-modal').style.display='flex'; }
+function closePolicy() { document.getElementById('policy-modal').style.display='none'; document.getElementById('policy-check').checked=true; }
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (!email||!pass) { err.textContent='Заполни все поля!'; return; }
+  if (!users[email] || users[email].pass !== pass) { err.textContent='Неверный email или пароль'; return; }
+  err.textContent='';
+  currentUser = { email, ...users[email] };
+  localStorage.setItem('litvpn_current', JSON.stringify(currentUser));
+  enterApp();
+}
+function doReg() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const policy = document.getElementById('policy-check').checked;
+  const err = document.getElementById('reg-err');
+  if (!name||!email||!pass) { err.textContent='Заполни все поля!'; return; }
+  if (!policy) { err.textContent='Прими политику конфиденциальности!'; return; }
+  if (users[email]) { err.textContent='Такой email уже есть!'; return; }
+  users[email] = { name, pass, plan:'loh' };
+  localStorage.setItem('litvpn_users', JSON.stringify(users));
+  currentUser = { email, name, pass, plan:'loh' };
+  localStorage.setItem('litvpn_current', JSON.stringify(currentUser));
+  enterApp();
+}
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('litvpn_current');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('auth-screen').style.display='flex';
+  if (speedInterval) clearInterval(speedInterval);
+}
+function enterApp() {
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  updateUserUI();
+  renderPlans();
+  renderFeatures();
+  renderGos();
+}
+
+function updateUserUI() {
+  const plan = PLANS.find(p => p.id === currentUser.plan) || PLANS[0];
+  document.getElementById('user-badge').textContent = plan.name;
+  document.getElementById('cur-plan-label').textContent = `Текущий: ${plan.emoji} ${plan.name}`;
+  document.getElementById('settings-email').textContent = currentUser.email;
+  document.getElementById('settings-plan').textContent = plan.name;
+}
+
+// VPN
+function toggleVPN() {
+  vpnOn = !vpnOn;
+  const btn = document.getElementById('vpn-btn');
+  const status = document.getElementById('vpn-status-text');
+  const label = document.getElementById('vpn-label');
+  const serverLabel = document.getElementById('vpn-server-label');
+  if (vpnOn) {
+    btn.classList.add('on');
+    status.textContent = '🟢 ПОДКЛЮЧЕНО';
+    label.textContent = 'Ты защищён, братан!';
+    serverLabel.textContent = 'Сервер: ' + selectedServer;
+    startSpeedSimulation();
+    showToast('VPN подключён! 🔐');
+  } else {
+    btn.classList.remove('on');
+    status.textContent = 'ОТКЛЮЧЕНО';
+    label.textContent = 'Нажми для подключения';
+    serverLabel.textContent = 'Сервер: Не выбран';
+    stopSpeedSimulation();
+  }
+}
+function selectServer(el, name) {
+  document.querySelectorAll('.server-item').forEach(i=>i.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedServer = name;
+  if (vpnOn) document.getElementById('vpn-server-label').textContent = 'Сервер: ' + name;
+}
+
+const speedUnits = ['ГБ/с','ТБ/с','ПБ/с'];
+function randSpeed() {
+  const unit = speedUnits[Math.floor(Math.random()*speedUnits.length)];
+  const val = (Math.random()*999+1).toFixed(1);
+  return val + ' ' + unit;
+}
+function startSpeedSimulation() {
+  document.getElementById('speed-down').textContent = randSpeed();
+  document.getElementById('speed-up').textContent = randSpeed();
+  speedInterval = setInterval(() => {
+    document.getElementById('speed-down').textContent = randSpeed();
+    document.getElementById('speed-up').textContent = randSpeed();
+  }, 800);
+}
+function stopSpeedSimulation() {
+  if (speedInterval) clearInterval(speedInterval);
+  document.getElementById('speed-down').textContent = '0 ГБ/с';
+  document.getElementById('speed-up').textContent = '0 ГБ/с';
+}
+
+// PLANS
+function renderPlans() {
+  const container = document.getElementById('plans-grid');
+  container.innerHTML = PLANS.map(plan => `
+    <div class="plan-card ${plan.popular?'popular':''}">
+      ${plan.popular ? '<div class="plan-badge">🔥 ХИТ</div>' : ''}
+      <div class="plan-name">${plan.emoji} ${plan.name}</div>
+      <div class="plan-price">${plan.price.includes('₽') ? plan.price.split('/')[0] : plan.price}<span>${plan.price.includes('/') ? '/мес' : ''}</span></div>
+      <div class="plan-features">
+        ${plan.features.map(f=>`<div class="plan-feat">${f}</div>`).join('')}
+      </div>
+      ${!plan.free ? `<div class="promo-row"><input class="promo-input" placeholder="Промокод" id="promo-${plan.id}"/><button class="promo-btn" onclick="applyPromo('${plan.id}')">OK</button></div>` : ''}
+      <button class="plan-btn ${plan.free?'free':''}" onclick="selectPlan('${plan.id}')">${currentUser&&currentUser.plan===plan.id ? '✅ Текущий' : plan.free ? 'Ты уже тут, лох' : 'Выбрать'}</button>
+    </div>
+  `).join('');
+}
+
+function applyPromo(planId) {
+  const input = document.getElementById('promo-'+planId);
+  const code = input.value.trim().toUpperCase();
+  if (PROMO_CODES[code]) {
+    const p = PROMO_CODES[code];
+    if (p.plan && p.plan !== planId) { showToast('Этот промокод не для этого тарифа! 😤'); return; }
+    showToast(`Промокод применён! Скидка ${p.discount}% 🎉`);
+    input.value = '';
+  } else {
+    showToast('Неверный промокод 💀');
+  }
+}
+
+function selectPlan(planId) {
+  if (!currentUser) return;
+  currentUser.plan = planId;
+  users[currentUser.email].plan = planId;
+  localStorage.setItem('litvpn_users', JSON.stringify(users));
+  localStorage.setItem('litvpn_current', JSON.stringify(currentUser));
+  updateUserUI();
+  renderPlans();
+  const plan = PLANS.find(p=>p.id===planId);
+  showToast(`Тариф "${plan.name}" активирован! ${plan.emoji}`);
+}
+
+// FEATURES
+function renderFeatures() {
+  const lockColors = { free:'free', paid:'paid', vip:'vip', ultimate:'ultimate' };
+  document.getElementById('features-list').innerHTML = FEATURES.map(f => `
+    <div class="feat-card">
+      <div class="feat-icon">${f.icon}</div>
+      <div class="feat-info">
+        <div class="feat-title">${f.title}</div>
+        <div class="feat-desc">${f.desc}</div>
+        <span class="feat-lock ${lockColors[f.lock]}">${f.lock==='free'?'✅ Бесплатно':'🔒 '+f.lockText}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// GOS
+function renderGos() {
+  document.getElementById('gos-grid').innerHTML = GOS_SERVICES.map(s => `
+    <div class="gos-card" onclick="openGos('${s.form}','${s.name}','${s.icon}')">
+      <div class="icon">${s.icon}</div>
+      <div class="name">${s.name}</div>
+      <div class="desc">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+const GOS_FORMS = {
+  doctor: `<div class="gos-form">
+    <label>ФИО</label><input placeholder="Иванов Иван Иванович"/>
+    <label>Дата рождения</label><input type="date"/>
+    <label>Специалист</label><select><option>Терапевт</option><option>Хирург</option><option>Окулист</option><option>Психиатр</option><option>Экзорцист</option></select>
+    <label>Дата записи</label><input type="date"/>
+    <label>Время</label><select><option>09:00</option><option>10:30</option><option>12:00</option><option>14:30</option><option>16:00</option></select>
+  </div>`,
+  fine: `<div class="gos-form">
+    <label>Номер постановления</label><input placeholder="188810123456"/>
+    <label>ФИО плательщика</label><input placeholder="Иванов Иван Иванович"/>
+    <label>Сумма штрафа (₽)</label><input type="number" placeholder="500"/>
+    <label>Способ оплаты</label><select><option>Карта</option><option>СБП</option><option>Наличные (приди сам)</option></select>
+  </div>`,
+  doc: `<div class="gos-form">
+    <label>Тип справки</label><select><option>О несудимости</option><option>О составе семьи</option><option>О том что живой</option><option>О регистрации</option></select>
+    <label>Цель получения</label><input placeholder="Зачем вам это?"/>
+    <label>Куда выдать</label><select><option>На email</option><option>В МФЦ</option><option>Почтой России (удачи)</option></select>
+  </div>`,
+  auto: `<div class="gos-form">
+    <label>VIN номер</label><input placeholder="X4X3B1FB0E0123456"/>
+    <label>Марка и модель</label><input placeholder="Лада Калина Sport"/>
+    <label>Год выпуска</label><input type="number" placeholder="2007"/>
+    <label>Причина постановки</label><select><option>Новый автомобиль</option><option>Переезд</option><option>Купил с рук у деда</option></select>
+  </div>`,
+  jkh: `<div class="gos-form">
+    <label>Адрес</label><input placeholder="г. Москва, ул. Примерная, д.1"/>
+    <label>Количество проживающих</label><input type="number" placeholder="3"/>
+    <label>Общий доход семьи (₽/мес)</label><input type="number" placeholder="45000"/>
+    <label>Размер ЖКХ платежей (₽/мес)</label><input type="number" placeholder="8000"/>
+  </div>`,
+  sad: `<div class="gos-form">
+    <label>ФИО ребёнка</label><input placeholder="Иванов Артём Иванович"/>
+    <label>Дата рождения ребёнка</label><input type="date"/>
+    <label>Желаемый сад (через запятую)</label><input placeholder="№23, №47, №12"/>
+    <label>Льготы</label><select><option>Нет льгот</option><option>Многодетная семья</option><option>Ребёнок-инвалид</option><option>Сотрудник ДОУ</option></select>
+  </div>`,
+  edu: `<div class="gos-form">
+    <label>Тип документа</label><select><option>Аттестат</option><option>Диплом</option><option>Справка об обучении</option><option>Академическая справка</option></select>
+    <label>Учреждение</label><input placeholder="МГУ им. Ломоносова"/>
+    <label>Год окончания</label><input type="number" placeholder="2020"/>
+  </div>`,
+  passport: `<div class="gos-form">
+    <label>ФИО</label><input placeholder="Иванов Иван Иванович"/>
+    <label>Дата рождения</label><input type="date"/>
+    <label>Место рождения</label><input placeholder="г. Москва"/>
+    <label>Срок паспорта</label><select><option>5 лет</option><option>10 лет</option></select>
+    <label>Подразделение МВД</label><select><option>Ближайшее к дому</option><option>МФЦ</option><option>Через портал (ждать дольше)</option></select>
+  </div>`,
+  vote: `<div class="gos-form">
+    <label>ФИО</label><input placeholder="Иванов Иван Иванович"/>
+    <label>Дата рождения</label><input type="date"/>
+    <label>Адрес регистрации</label><input placeholder="г. Москва, ул. Ленина, д.1"/>
+    <p style="font-size:0.75rem;color:var(--text3);margin-top:8px">⚠️ Ваш голос важен. Или нет. Мы не знаем.</p>
+  </div>`,
+  biz: `<div class="gos-form">
+    <label>Форма организации</label><select><option>ИП</option><option>ООО</option><option>АО</option><option>Самозанятый</option></select>
+    <label>Название</label><input placeholder="ООО Рога и Копыта"/>
+    <label>Основной ОКВЭД</label><input placeholder="62.01 (Разработка ПО)"/>
+    <label>Система налогообложения</label><select><option>УСН 6%</option><option>УСН 15%</option><option>ОСНО</option><option>Патент</option></select>
+  </div>`,
+  pension: `<div class="gos-form">
+    <label>СНИЛС</label><input placeholder="123-456-789 00"/>
+    <label>ФИО</label><input placeholder="Иванов Иван Иванович"/>
+    <label>Что хотите узнать</label><select><option>Размер пенсии</option><option>Дата выхода на пенсию</option><option>Накопления</option><option>Почему так мало</option></select>
+  </div>`,
+  pet: `<div class="gos-form">
+    <label>Вид животного</label><select><option>Кошка</option><option>Собака</option><option>Попугай</option><option>Крокодил</option><option>Дракон (редкий)</option></select>
+    <label>Кличка</label><input placeholder="Барсик / Жучка / Феликс"/>
+    <label>Порода</label><input placeholder="Беспородный красавчик"/>
+    <label>Год рождения</label><input type="number" placeholder="2020"/>
+  </div>`,
+};
+
+function openGos(form, name, icon) {
+  const modal = document.getElementById('gos-modal');
+  const content = document.getElementById('gos-modal-content');
+  content.innerHTML = `
+    <h3>${icon} ${name}</h3>
+    ${GOS_FORMS[form] || '<p>Форма недоступна</p>'}
+    <div id="gos-err" style="color:var(--red);font-size:0.8rem;min-height:18px;margin-top:6px;font-weight:700"></div>
+    <button class="btn-main btn-blue" style="margin-top:14px" onclick="submitGos('${name}')">Подать заявку</button>
+    <button class="btn-main" style="background:var(--bg2);color:var(--text2);margin-top:8px" onclick="closeGos()">Отмена</button>
+  `;
+  modal.style.display='flex';
+}
+function submitGos(name) {
+  document.getElementById('gos-modal-content').innerHTML = `
+    <div class="gos-success">
+      <div class="check">✅</div>
+      <h3>Заявка отправлена!</h3>
+      <p>Ваша заявка "<strong>${name}</strong>" принята.<br>Ожидайте ответа в течение 3–30 рабочих дней.<br><br>Номер заявки: <strong>LIT-${Math.floor(Math.random()*999999)}</strong></p>
+      <button class="btn-main" style="margin-top:20px" onclick="closeGos()">Закрыть</button>
+    </div>
+  `;
+}
+function closeGos() { document.getElementById('gos-modal').style.display='none'; }
+
+// NAVIGATION
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// THEME
+function toggleTheme() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('dark', darkMode);
+  document.getElementById('theme-btn').textContent = darkMode ? '☀️' : '🌙';
+  const toggle = document.getElementById('dark-toggle');
+  if(toggle) toggle.classList.toggle('on', darkMode);
+}
+function toggleThemeBtn(btn) {
+  btn.classList.toggle('on');
+  darkMode = btn.classList.contains('on');
+  document.body.classList.toggle('dark', darkMode);
+  document.getElementById('theme-btn').textContent = darkMode ? '☀️' : '🌙';
+}
+
+// TOAST
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none', 2500);
+}
+
+// INIT
+if (currentUser) {
+  // restore from storage
+  const storedUser = localStorage.getItem('litvpn_current');
+  if (storedUser) {
+    currentUser = JSON.parse(storedUser);
+    enterApp();
+  }
+}
+</script>
+</body>
+</html>
